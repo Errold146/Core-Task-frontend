@@ -1,4 +1,5 @@
 
+export { AuthHeading } from "./AuthHeading";
 export { ErrorMessage } from "./ErrorMessage"
 export { Heading } from "./Heading";
 export { Logo } from "./Logo";

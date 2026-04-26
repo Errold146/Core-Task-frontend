@@ -55,7 +55,7 @@ export default function DashboardView() {
 					{data.map((project) => (
 						<li
 							key={project._id}
-							className="group relative z-0 rounded-2xl border border-t-0 border-gris-200 bg-white transition-all duration-300 hover:z-10 hover:-translate-y-1 hover:shadow-xl hover:shadow-azul-600/10 focus-within:z-20"
+							className="relative z-0 overflow-hidden transition-all duration-300 bg-white border border-t-0 group rounded-2xl border-gris-200 hover:z-10 hover:-translate-y-1 hover:shadow-xl hover:shadow-azul-600/10 focus-within:z-20"
 						>
 							<div className="h-1 rounded-t-2xl bg-gradient-to-r from-azul-500 via-azul-600 to-verde-500" />
 

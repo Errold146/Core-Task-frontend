@@ -18,7 +18,8 @@
       "@/type/*": ["type/*"],
       "@/lib/*": ["lib/*"],
       "@/utils/*": ["utils/*"],
-      "@/utils": ["utils/index.ts"]
+      "@/utils": ["utils/index.ts"],
+      "@/hooks/*": ["hooks/*"]
     },
 
     /* Bundler mode */

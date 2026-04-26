@@ -1,8 +1,15 @@
-import { Outlet } from "react-router-dom";
-import { Logo, NavMenu } from "@/components";
+import { Navigate, Outlet } from "react-router-dom";
+import { Logo, NavMenu, Spinner } from "@/components";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function AppLayout() {
-    return (
+
+    const { data, isError, isLoading } = useAuth()
+
+    if ( isLoading ) return <Spinner centered />;
+    if ( isError ) return <Navigate to={'/auth/login'} />;
+
+    if ( data ) return (
         <>
             <header className="px-10 py-2 bg-gris-800">
                 <div className="flex flex-col items-center justify-between mx-auto max-w-screen-2xl lg:flex-row">
@@ -10,7 +17,7 @@ export default function AppLayout() {
                         <Logo />
                     </div>
 
-                    <NavMenu />
+                    <NavMenu name={data.name} />
                 </div>
             </header>
 
