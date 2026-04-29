@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { Logo, NavMenu, Spinner } from "@/components";
+
 import { useAuth } from "@/hooks/useAuth";
+import { Footer, Logo, NavMenu, Spinner } from "@/components";
 
 export default function AppLayout() {
 
@@ -25,11 +26,7 @@ export default function AppLayout() {
                 <Outlet />
             </section>
 
-            <footer className="py-5">
-                <p className="text-center text-azul-700">
-                    CoreTask es un proyecto creado y mantenido por MicroWeb-cr -- Todos los derechos resevados © {new Date().getFullYear()}
-                </p>
-            </footer>
+            <Footer />
         </>
     )
 }

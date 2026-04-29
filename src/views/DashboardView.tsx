@@ -1,36 +1,44 @@
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { PlusIcon, EllipsisVerticalIcon } from "@heroicons/react/24/solid";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
-	FolderPlusIcon, RocketLaunchIcon, SparklesIcon, EyeIcon, PencilSquareIcon, TrashIcon, UserIcon, DocumentTextIcon 
+	FolderPlusIcon, RocketLaunchIcon, SparklesIcon, EyeIcon, PencilSquareIcon, TrashIcon, UserIcon, DocumentTextIcon, ShieldCheckIcon, ArrowRightStartOnRectangleIcon
 } from "@heroicons/react/24/outline";
 
+import { useAuth } from "@/hooks/useAuth";
 import { Heading, Spinner } from "@/components";
-import { deleteProject, getProjects } from "@/api/ProjectAPI";
+import { getProjects } from "@/api/ProjectAPI";
+import DeleteProjectModal from "@/components/projects/DeleteProjectModal";
+import { leaveProject } from "@/api/TeamAPI";
+import { isManager } from "@/utils/policies";
 
 export default function DashboardView() {
+
+	const { data: user, isLoading: authLoading } = useAuth()
 	const { data, isLoading } = useQuery({
 		queryKey: ["projects"],
 		queryFn: getProjects,
 	});
 
+	const navigate = useNavigate()
+	const location = useLocation()
 	const queryClient = useQueryClient()
-	const { mutate } = useMutation({
-		mutationFn: deleteProject,
-		onError: (error) => {
-			toast.error(error.message)
-		},
+
+	const { mutate: leaveProjectMutate } = useMutation({
+		mutationFn: leaveProject,
+		onError: error => toast.error(error.message),
 		onSuccess: (data) => {
 			queryClient.invalidateQueries({queryKey: ['projects']})
 			toast.success(data)
+			navigate('/')
 		}
 	})
 
-	if (isLoading) return <Spinner centered />;
+	if (isLoading && authLoading) return <Spinner centered />;
 
-	if (data) return (
+	if (data && user) return (
 		<>
 			<Heading
 				title="Mis Proyectos"
@@ -61,12 +69,25 @@ export default function DashboardView() {
 
 							<div className="flex items-start justify-between p-6">
 								<div className="flex-1 min-w-0 space-y-3">
+
 									<Link
 										to={`/projects/${project._id}`}
-										className="text-xl font-bold transition-colors duration-200 text-gris-800 hover:text-azul-600 hover:underline"
+										className="mr-4 text-xl font-bold transition-colors duration-200 text-gris-800 hover:text-azul-600 hover:underline"
 									>
 										{project.projectName}
 									</Link>
+
+									{isManager(project.manager, user._id) ? (
+										<span className="inline-flex items-center gap-1.5 rounded-full bg-azul-100 px-2.5 py-0.5 text-xs font-semibold text-azul-700 border border-azul-700">
+											<ShieldCheckIcon className="size-3.5" />
+											Administrador
+										</span>
+									) : (
+										<span className="inline-flex items-center gap-1.5 rounded-full bg-verde-100 px-2.5 py-0.5 text-xs font-semibold text-verde-600 border border-verde-600">
+											<UserIcon className="size-3.5" />
+											Miembro
+										</span>
+									)}
 
 									<div className="flex items-center gap-2 text-sm text-gris-500">
 										<UserIcon className="size-4 text-azul-400" />
@@ -101,26 +122,45 @@ export default function DashboardView() {
 													Ver Proyecto
 												</Link>
 											</MenuItem>
-											<MenuItem>
-												<Link
-													to={`/projects/${project._id}/edit`}
-													className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gris-700 hover:bg-verde-50 hover:text-verde-700 transition-colors duration-150"
-												>
-													<PencilSquareIcon className="size-5 text-verde-500" />
-													Editar Proyecto
-												</Link>
-											</MenuItem>
-											<div className="my-1 border-t border-gris-100" />
-											<MenuItem>
-												<button
-													type="button"
-													className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium rounded-lg text-red-600 hover:bg-red-50 transition-colors duration-150"
-													onClick={() => mutate(project._id)}
-												>
-													<TrashIcon className="size-5" />
-													Eliminar Proyecto
-												</button>
-											</MenuItem>
+
+											{isManager(project.manager, user._id) ? (
+												<>
+													<MenuItem>
+														<Link
+															to={`/projects/${project._id}/edit`}
+															className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg text-gris-700 hover:bg-verde-50 hover:text-verde-700 transition-colors duration-150"
+														>
+															<PencilSquareIcon className="size-5 text-verde-500" />
+															Editar Proyecto
+														</Link>
+													</MenuItem>
+													<div className="my-1 border-t border-gris-100" />
+													<MenuItem>
+														<button
+															type="button"
+															className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium rounded-lg text-red-600 hover:bg-red-50 transition-colors duration-150"
+															onClick={() => navigate(`${location.pathname}?deleteProject=${project._id}`)}
+														>
+															<TrashIcon className="size-5" />
+															Eliminar Proyecto
+														</button>
+													</MenuItem>
+												</>
+											) : (
+												<>
+													<div className="my-1 border-t border-gris-100" />
+													<MenuItem>
+														<button
+															type="button"
+															className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium rounded-lg text-amber-600 hover:bg-amber-50 transition-colors duration-150"
+															onClick={() => leaveProjectMutate(project._id)}
+														>
+															<ArrowRightStartOnRectangleIcon className="size-5" />
+															Abandonar Proyecto
+														</button>
+													</MenuItem>
+												</>
+											)}
 										</MenuItems>
 								</Menu>
 							</div>
@@ -160,6 +200,7 @@ export default function DashboardView() {
 					</div>
 				</div>
 			)}
+			<DeleteProjectModal />
 		</>
 	);
 }

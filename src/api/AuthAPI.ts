@@ -12,6 +12,7 @@ export async function createAccount(formData: UserRegistrationForm) {
         if ( isAxiosError(error) && error.response ) {
             throw new Error(error.response.data.error)
         }
+        throw error
     }
 }
 
@@ -25,6 +26,7 @@ export async function loginUser(formData: UserLoginForm) {
         if ( isAxiosError(error) && error.response ) {
             throw new Error(error.response.data.error)
         }
+        throw error
     }
 }
 
@@ -38,6 +40,7 @@ export async function confirmAccount(formData: ConfirmToken) {
         if ( isAxiosError(error) && error.response ) {
             throw new Error(error.response.data.error)
         }
+        throw error
     }
 }
 
@@ -51,6 +54,7 @@ export async function newConfirmationCode(formData: RequestConfirmationCodeForm)
         if ( isAxiosError(error) && error.response ) {
             throw new Error(error.response.data.error)
         }
+        throw error
     }
 }
 
@@ -64,6 +68,7 @@ export async function forgotPassword(formData: ForgotPasswordForm) {
         if ( isAxiosError(error) && error.response ) {
             throw new Error(error.response.data.error)
         }
+        throw error
     }
 }
 
@@ -77,6 +82,7 @@ export async function validateToken(formData: ConfirmToken) {
         if ( isAxiosError(error) && error.response ) {
             throw new Error(error.response.data.error)
         }
+        throw error
     }
 }
 
@@ -95,6 +101,7 @@ export async function updatePassword({ formData, token }: UpdatePass) {
         if ( isAxiosError(error) && error.response ) {
             throw new Error(error.response.data.error)
         }
+        throw error
     }
 }
 
@@ -107,5 +114,6 @@ export async function getUser() {
         if ( isAxiosError(error) && error.response ) {
             throw new Error(error.response.data.error)
         }
+        throw error
     }
 }

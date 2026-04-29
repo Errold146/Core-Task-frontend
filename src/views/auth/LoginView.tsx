@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 
 import { loginUser } from "@/api/AuthAPI";
@@ -9,6 +9,7 @@ import { AuthHeading, ErrorMessage } from "@/components";
 
 export default function LoginView() {
     const navigate = useNavigate()
+    const queryClient = useQueryClient()
 
     const initialValues: UserLoginForm = {
         email: '',
@@ -24,7 +25,8 @@ export default function LoginView() {
                 navigate('/auth/confirm-account')
             }
         },
-        onSuccess: () => {
+        onSuccess: async () => {
+            await queryClient.resetQueries({ queryKey: ['user'] })
             toast.success('Sesión Iniciada Correctamente.')
             reset()
             navigate('/')

@@ -31,22 +31,28 @@ Este frontend permite:
 
 - Registrar usuarios, confirmar cuenta por email y hacer login.
 - Recuperar password con codigo de un solo uso enviado por email.
-- Crear, editar y eliminar proyectos.
+- Crear, editar y eliminar proyectos (eliminacion con confirmacion de password).
 - Crear, editar y eliminar tareas por proyecto.
-- Cambiar estado de tareas con actualizacion inmediata en DOM.
-- Ver feedback de acciones y errores con toasts.
+- Cambiar estado de tareas con **Drag & Drop** al estilo kanban (usando `@dnd-kit/react`) con actualizacion optimista.
+- Agregar, ver y eliminar notas en cada tarea desde un panel lateral dentro del modal de tarea.
+- Gestionar el equipo del proyecto: buscar colaboradores por email, agregar y eliminar miembros.
+- Ver y editar el perfil del usuario (nombre, email, password).
+- Ver feedback de acciones y errores con toasts (Sonner).
 
 ## Stack tecnico
 
 - React 19 + TypeScript
-- Vite
-- Tailwind CSS
-- React Router
-- TanStack Query
-- Axios
-- React Hook Form
-- Zod
-- Headless UI + Heroicons + Sonner
+- Vite 8
+- Tailwind CSS (con tokens de diseño personalizados: `gris-*`, `azul-*`, `verde-*`)
+- React Router v7
+- TanStack Query v5 (cache, actualizacion optimista, invalidacion)
+- Axios (con interceptor que inyecta JWT en cada peticion)
+- React Hook Form v7
+- Zod (validacion de esquemas de respuesta de la API)
+- Headless UI v2 (Dialog, Transition, Menu)
+- Heroicons v2
+- Sonner (toasts)
+- **@dnd-kit/react** v0.4 (DnD kanban — DragDropProvider, useDraggable, useDroppable, DragOverlay)
 
 ## Requisitos
 
@@ -101,8 +107,11 @@ Descripcion:
 |---|---|---|
 | `/` | `DashboardView` | Lista de proyectos del usuario |
 | `/projects/create` | `CreateProjectView` | Formulario para crear proyecto |
-| `/projects/:projectId` | `ProjectsDetailsView` | Detalle del proyecto y sus tareas |
+| `/projects/:projectId` | `ProjectsDetailsView` | Tablero kanban con las tareas del proyecto |
 | `/projects/:projectId/edit` | `EditProjectView` | Formulario para editar proyecto |
+| `/projects/:projectId/team` | `ProjectTeamView` | Gestion del equipo del proyecto |
+| `/profile` | `ProfileView` | Ver y editar datos del perfil |
+| `/profile/change-password` | `ChangePasswordView` | Cambiar password desde el perfil |
 
 ### Rutas de autenticacion
 
@@ -117,9 +126,9 @@ Descripcion:
 
 ## Gestion de estado y datos
 
-- Se usa TanStack Query para consultas, cache e invalidacion.
-- Se aplica actualizacion optimista en acciones clave de tareas para reflejar cambios en el DOM al instante.
-- Al finalizar mutaciones se invalida cache para confirmar datos reales del backend.
+- TanStack Query gestiona cache, refetch e invalidacion en todas las operaciones.
+- Actualizacion optimista en el DnD kanban: el estado de la tarea se mueve visualmente de inmediato y se revierte si el servidor devuelve error.
+- Patron URL-state para modales: las URL del tipo `?viewTask=id`, `?deleteProject=id` controlan que modal esta abierto, lo que hace los modales enlazables y funcionales con el boton Atras del navegador.
 - `QueryClientProvider` y `ReactQueryDevtools` estan configurados en `src/main.tsx`.
 
 ## Autenticacion
@@ -135,78 +144,103 @@ Descripcion:
 ```text
 src/
   api/
-    AuthAPI.ts          <- llamadas a /api/auth/* (nuevo)
+    AuthAPI.ts          <- llamadas a /api/auth/*
+    NoteAPI.ts          <- llamadas a notas por tarea
+    ProfileAPI.ts       <- perfil y check-password
     ProjectAPI.ts
     TaskAPI.ts
+    TeamAPI.ts          <- gestion de equipo
   components/
-    AuthHeading.tsx     <- heading para paginas de auth (nuevo)
+    AuthHeading.tsx
     ErrorMessage.tsx
+    Footer.tsx
     Heading.tsx
     Logo.tsx
-    NavMenu.tsx         <- menu de navegacion con datos de usuario (nuevo)
+    NavMenu.tsx
     Spinner.tsx
     auth/
-      NewPasswordForm.tsx    <- formulario nuevo password (nuevo)
-      NewPasswordToken.tsx   <- ingreso de token de recuperacion (nuevo)
+      NewPasswordForm.tsx
+      NewPasswordToken.tsx
+    notes/
+      AddNotesForm.tsx       <- formulario de nueva nota
+      NotesList.tsx          <- lista de notas con boton eliminar
+      NotesPanel.tsx         <- panel lateral de notas en modal de tarea
+    profile/
+      ProfileForm.tsx        <- formulario de edicion de perfil
+      Tabs.tsx               <- tabs entre perfil y cambio de password
     projects/
+      DeleteProjectModal.tsx <- modal con confirmacion de password
       EditProjectForm.tsx
       ProjectForm.tsx
     tasks/
       AddTaskModal.tsx
       EditTaskData.tsx
       EditTaskModal.tsx
-      TaskCard.tsx
+      TaskCard.tsx           <- card arrastrable con grip de DnD
       TaskForm.tsx
       TaskModalDetails.tsx
-      TasksList.tsx
+      TasksList.tsx          <- tablero kanban con columnas soltables
+    team/
+      AddMemberForm.tsx      <- busqueda y seleccion de miembro
+      AddMemberModal.tsx
+      SearchResult.tsx
   hooks/
-    useAuth.ts          <- hook para obtener usuario autenticado (nuevo)
+    useAuth.ts
   layouts/
-    AppLayout.tsx       <- layout protegido con guardia de auth (actualizado)
-    AuthLayout.tsx      <- layout para paginas publicas de auth (nuevo)
+    AppLayout.tsx            <- layout protegido con guardia de auth
+    AuthLayout.tsx
+    ProfileLayout.tsx        <- layout con tabs de perfil
   lib/
-    axios.ts            <- instancia de Axios con token en header (actualizado)
+    axios.ts                 <- instancia con JWT en header
     taskStatus.ts
   type/
     index.ts
   utils/
     index.ts
+    policies.ts              <- helpers de autorizacion (manager/member)
   views/
     DashboardView.tsx
+    NotFoundView.tsx
     auth/
-      ConfirmAccountView.tsx    <- (nuevo)
-      ForgotPasswordView.tsx    <- (nuevo)
-      LoginView.tsx             <- (nuevo)
-      NewPasswordView.tsx       <- (nuevo)
-      RegisterView.tsx          <- (nuevo)
-      RequestNewCodeView.tsx    <- (nuevo)
+      ConfirmAccountView.tsx
+      ForgotPasswordView.tsx
+      LoginView.tsx
+      NewPasswordView.tsx
+      RegisterView.tsx
+      RequestNewCodeView.tsx
+    Profile/
+      ChangePasswordView.tsx
+      ProfileView.tsx
     projects/
       CreateProjectView.tsx
       EditProjectView.tsx
       ProjectsDetailsView.tsx
-  router.tsx            <- rutas de auth agregadas (actualizado)
+      ProjectTeamView.tsx    <- gestion del equipo del proyecto
+  router.tsx
   main.tsx
 ```
 
 ## Flujo de trabajo recomendado
 
-1. Inicia primero el backend.
-2. Inicia el frontend con `npm run dev`.
-3. Verifica que `VITE_API_URL` apunte a la URL correcta del backend.
+1. Inicia primero el backend con `npm run dev` (puerto 4000 por defecto).
+2. Inicia el frontend con `npm run dev` (puerto 5173 por defecto).
+3. Verifica que `VITE_API_URL` en `.env` apunte a la URL correcta del backend.
 4. Regístrate en `/auth/register`, confirma la cuenta con el codigo recibido por email.
 5. Inicia sesion en `/auth/login` para acceder al dashboard.
-6. Si despliegas por separado, actualiza las variables de entorno en cada plataforma.
+6. Crea un proyecto, agrega tareas y arrastralas entre columnas para cambiar su estado.
+7. Abre una tarea para agregar notas o ver el historial de comentarios.
+8. En la vista de equipo del proyecto puedes buscar colaboradores por email y agregarlos.
+9. Si despliegas por separado, actualiza `VITE_API_URL` en el proveedor de frontend con la URL publica del backend.
 
 ## Despliegue
 
-Para separar frontend y backend en proveedores distintos:
+Para desplegar en produccion (SPA estatica):
 
-1. Deploy del backend (por ejemplo Render, Railway, Fly.io).
-2. Deploy del frontend (por ejemplo Vercel, Netlify, Cloudflare Pages).
-3. Configura en frontend `VITE_API_URL` con la URL publica del backend.
-4. Configura en backend `FRONTEND_URL` con la URL publica del frontend para CORS y links de email.
-
-Con eso la integracion entre ambos repositorios queda desacoplada y lista para produccion.
+1. Elige un proveedor para SPAs (Vercel, Netlify, Cloudflare Pages, etc.).
+2. Configura `VITE_API_URL` en las variables de entorno del proveedor, apuntando a la URL publica del backend.
+3. El comando de build es `npm run build` y el directorio de salida es `dist/`.
+4. Si usas React Router con rutas del lado del cliente, configura el proveedor para redirigir todas las rutas a `index.html` (rewrite rule `/* → /index.html`).
+5. No subas `.env` al repositorio — usa siempre las variables de entorno del panel del proveedor.
 
 ## ✉️ Contacto
 

@@ -5,19 +5,41 @@ import { EllipsisVerticalIcon } from "@heroicons/react/20/solid";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { EyeIcon, PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { Menu, MenuButton, Transition, MenuItem, MenuItems } from "@headlessui/react";
+import { useDraggable } from "@dnd-kit/react";
 
 import type { Task } from "@/type";
 import { deleteTask } from "@/api/TaskAPI";
 import { statusConfig } from "@/lib/taskStatus";
 
 interface Props {
-    task: Task;
+    task: Task
+    canDelete: boolean
 }
 
-export function TaskCard({ task }: Props) {
-    
+function DragHandle({ handleRef }: { handleRef: (el: Element | null) => void }) {
+    return (
+        <div
+            ref={handleRef}
+            title="Arrastrar tarea"
+            className="shrink-0 flex items-center justify-center w-5 h-full -ml-1 cursor-grab active:cursor-grabbing touch-none select-none text-gris-200 hover:text-gris-400 transition-colors duration-150 rounded"
+        >
+            <svg width="10" height="18" viewBox="0 0 10 18" fill="none" aria-hidden="true">
+                <circle cx="2.5" cy="3" r="1.5" fill="currentColor" />
+                <circle cx="7.5" cy="3" r="1.5" fill="currentColor" />
+                <circle cx="2.5" cy="9" r="1.5" fill="currentColor" />
+                <circle cx="7.5" cy="9" r="1.5" fill="currentColor" />
+                <circle cx="2.5" cy="15" r="1.5" fill="currentColor" />
+                <circle cx="7.5" cy="15" r="1.5" fill="currentColor" />
+            </svg>
+        </div>
+    )
+}
+
+export function TaskCard({ task, canDelete }: Props) {
+
+    const { ref, handleRef, isDragging } = useDraggable({ id: task._id })
     const config = statusConfig[task.status];
-    
+
     const navigate = useNavigate()
     const location = useLocation()
     const params = useParams()
@@ -41,14 +63,21 @@ export function TaskCard({ task }: Props) {
 
     return (
         <li
-            className={`group relative z-0 flex items-center justify-between gap-4 rounded-xl border border-gris-200 border-l-4 ${config.borderColor} bg-white p-5 shadow-sm transition-all duration-300 hover:z-10 hover:-translate-y-0.5 hover:border-gris-300 hover:shadow-lg hover:shadow-azul-500/10 focus-within:z-20`}
+            ref={ref}
+            className={`group relative z-0 flex items-center gap-3 rounded-xl border border-gris-200 border-l-4 ${config.borderColor} bg-white px-4 py-4 shadow-sm transition-all duration-300 ${
+                isDragging
+                    ? "opacity-30 scale-[0.97] shadow-none"
+                    : "hover:z-10 hover:-translate-y-0.5 hover:border-gris-300 hover:shadow-lg hover:shadow-azul-500/10 focus-within:z-20"
+            }`}
         >
+            <DragHandle handleRef={handleRef} />
+
             <div className="flex flex-col flex-1 min-w-0 gap-2">
                 <div className="flex items-center gap-2">
                     <button
                         type="button"
                         onClick={openTaskDetails}
-                        className="truncate text-left text-base font-bold text-gris-800 transition-colors duration-300 hover:text-azul-700 hover:underline hover:underline-offset-4"
+                        className="text-base font-bold text-left truncate transition-colors duration-300 text-gris-800 hover:text-azul-700 hover:underline hover:underline-offset-4"
                     >
                         {task.name}
                     </button>
@@ -105,20 +134,22 @@ export function TaskCard({ task }: Props) {
                                 </MenuItem>
                             </div>
 
-                            <div className="pt-1">
-                                <MenuItem>
-                                    {({ focus }) => (
-                                        <button
-                                            type="button"
-                                            className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${focus ? "bg-red-50 text-red-600" : "text-red-500"}`}
-                                            onClick={() => mutate({projectId, taskId: task._id})}
-                                        >
-                                            <TrashIcon className="size-4" />
-                                            Eliminar Tarea
-                                        </button>
-                                    )}
-                                </MenuItem>
-                            </div>
+                            {canDelete && (
+                                <div className="pt-1">
+                                    <MenuItem>
+                                        {({ focus }) => (
+                                            <button
+                                                type="button"
+                                                className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${focus ? "bg-red-50 text-red-600" : "text-red-500"}`}
+                                                onClick={() => mutate({projectId, taskId: task._id})}
+                                            >
+                                                <TrashIcon className="size-4" />
+                                                Eliminar Tarea
+                                            </button>
+                                        )}
+                                    </MenuItem>
+                                </div>
+                            )}
                         </MenuItems>
                     </Transition>
                 </Menu>

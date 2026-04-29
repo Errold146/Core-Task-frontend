@@ -1,6 +1,6 @@
 import api from "@/lib/axios";
 import { isAxiosError } from "axios";
-import { TaskSchema, type Project, type Task, type TaskFormData } from '../type';
+import { TaskDetailSchema, type Project, type Task, type TaskFormData } from '../type';
 
 interface TaskAPIType {
     formData: TaskFormData
@@ -19,6 +19,7 @@ export async function createTask({formData, projectId}: Pick<TaskAPIType, 'formD
         if (isAxiosError(error) && error.response) {
             throw new Error(error.response.data.error)
         }
+        throw error
     }
 }
 
@@ -26,13 +27,18 @@ export async function getTaskById({projectId, taskId}: Pick<TaskAPIType, 'projec
     try {
         const url = `/projects/${projectId}/tasks/${taskId}`
         const { data } = await api(url)
-        const res = TaskSchema.safeParse(data)
-        if ( res.success ) return res.data;
+        const res = TaskDetailSchema.safeParse(data)
+        if ( !res.success ) {
+            console.error('Error parseando tarea:', res.error.issues)
+            throw new Error('Error al procesar los datos de la tarea')
+        }
+        return res.data
         
     } catch (error) {
         if (isAxiosError(error) && error.response) {
             throw new Error(error.response.data.error)
         }
+        throw error
     }
 }
 
@@ -46,6 +52,7 @@ export async function updateTask({projectId, taskId, formData}: Pick<TaskAPIType
         if (isAxiosError(error) && error.response) {
             throw new Error(error.response.data.error)
         }
+        throw error
     }
 }
 
@@ -59,6 +66,7 @@ export async function deleteTask({projectId, taskId}: Pick<TaskAPIType, 'project
         if (isAxiosError(error) && error.response) {
             throw new Error(error.response.data.error)
         }
+        throw error
     }
 }
 
@@ -72,5 +80,6 @@ export async function updateStatus({projectId, taskId, status}: Pick<TaskAPIType
         if (isAxiosError(error) && error.response) {
             throw new Error(error.response.data.error)
         }
+        throw error
     }
 }

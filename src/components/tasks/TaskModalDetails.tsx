@@ -3,12 +3,13 @@ import { Fragment, useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
-import {CalendarDaysIcon, ClockIcon, DocumentTextIcon, FlagIcon, XMarkIcon} from '@heroicons/react/24/outline';
+import {ArrowRightIcon, CalendarDaysIcon, ClockIcon, DocumentTextIcon, FlagIcon, UserCircleIcon, XMarkIcon} from '@heroicons/react/24/outline';
 
 import { formatDate } from '@/utils';
-import type { Task, TaskStatus } from '@/type';
+import type { Task, TaskDetail, TaskStatus } from '@/type';
 import { statusConfig } from '@/lib/taskStatus';
 import { getTaskById, updateStatus } from '@/api/TaskAPI';
+import NotesPanel from '../notes/NotesPanel';
 
 
 export default function TaskModalDetails() {
@@ -38,10 +39,10 @@ export default function TaskModalDetails() {
             await queryClient.cancelQueries({ queryKey: ['task', taskId] })
             await queryClient.cancelQueries({ queryKey: ['project', projectId] })
 
-            const previousTask = queryClient.getQueryData<Task>(['task', taskId])
+            const previousTask = queryClient.getQueryData<TaskDetail>(['task', taskId])
             const previousProject = queryClient.getQueryData<{ tasks: Task[] }>(['project', projectId])
 
-            queryClient.setQueryData<Task>(['task', taskId], (currentTask) => {
+            queryClient.setQueryData<TaskDetail>(['task', taskId], (currentTask) => {
                 if (!currentTask) return currentTask
                 return { ...currentTask, status: variables.status }
             })
@@ -61,7 +62,7 @@ export default function TaskModalDetails() {
         },
         onError: (error, _variables, context) => {
             if (context?.previousTask) {
-                queryClient.setQueryData(['task', taskId], context.previousTask)
+                queryClient.setQueryData<TaskDetail>(['task', taskId], context.previousTask)
             }
 
             if (context?.previousProject) {
@@ -129,8 +130,8 @@ export default function TaskModalDetails() {
                                 leaveTo="opacity-0 scale-95"
                             >
                                 <DialogPanel className="relative w-full max-w-4xl overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl shadow-azul-900/20">
-                                    <div className="absolute rounded-full -top-24 -right-20 size-72 bg-azul-200/50 blur-3xl" />
-                                    <div className="absolute rounded-full -bottom-24 -left-20 size-72 bg-verde-200/50 blur-3xl" />
+                                    <div className="absolute -z-10 rounded-full -top-24 -right-20 size-72 bg-azul-200/50 blur-3xl" />
+                                    <div className="absolute -z-10 rounded-full -bottom-24 -left-20 size-72 bg-verde-200/50 blur-3xl" />
 
                                     <div className="relative p-6 border-b border-gris-100 bg-gradient-to-r from-azul-50 via-white to-verde-50 md:p-8">
                                         <div className="flex items-start justify-between gap-4">
@@ -221,7 +222,36 @@ export default function TaskModalDetails() {
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {/* Historial de cambios */}
+                                        {data.completedBy.length > 0 && (
+                                            <section className="p-5 bg-white border rounded-2xl border-gris-200">
+                                                <p className="mb-4 text-sm font-bold tracking-wide uppercase text-gris-500">Historial de cambios</p>
+                                                <ol className="relative ml-1 space-y-4 border-l-2 border-gris-200">
+                                                    {[...data.completedBy].map((entry) => {
+                                                        const s = statusConfig[entry.status]
+                                                        return (
+                                                            <li key={entry._id} className="ml-5">
+                                                                <span className={`absolute -left-[9px] flex size-4 items-center justify-center rounded-full ring-2 ring-white ${s.dot}`} />
+                                                                <div className="flex flex-wrap items-center gap-2">
+                                                                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${s.badge}`}>
+                                                                        <ArrowRightIcon className="size-3" />
+                                                                        {s.label}
+                                                                    </span>
+                                                                    <span className="inline-flex items-center gap-1 text-xs text-gris-500">
+                                                                        <UserCircleIcon className="size-3.5" />
+                                                                        {entry.user?.name ?? 'Usuario inactivo'}
+                                                                    </span>
+                                                                </div>
+                                                            </li>
+                                                        )
+                                                    })}
+                                                </ol>
+                                            </section>
+                                        )}
                                     </div>
+
+                                    <NotesPanel notes={data.notes} projectId={projectId} taskId={taskId} />
                                 </DialogPanel>
                             </TransitionChild>
                         </div>
